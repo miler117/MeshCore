@@ -1,4 +1,4 @@
-name: Build Waveshare RP2040-LoRa-HF Repeater Firmware
+name: Build Waveshare RP2040-LoRa-HF Repeater Firmware v4
 
 on:
   workflow_dispatch:

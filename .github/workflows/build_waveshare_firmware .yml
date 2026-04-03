@@ -24,10 +24,16 @@ jobs:
 
       - name: Apply patches
         run: |
-          sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
+          # Add f_cpu WITHOUT indentation (indented lines = continuation of previous value in INI)
+          sed -i '/board_build.filesystem_size/aboard_build.f_cpu = 48000000L' \
             variants/waveshare_rp2040_lora/platformio.ini
+
+          # Fix LittleFS auto-format on first boot
           sed -i 's/LittleFS\.begin();/LittleFS.begin(true);/g' \
             examples/simple_repeater/main.cpp
+
+          echo "=== Verify patches ==="
+          grep -n "f_cpu\|filesystem_size" variants/waveshare_rp2040_lora/platformio.ini
           grep -n "LittleFS" examples/simple_repeater/main.cpp
 
       - name: Build

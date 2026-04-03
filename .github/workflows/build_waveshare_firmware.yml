@@ -1,0 +1,54 @@
+name: Build Waveshare RP2040-LoRa-HF Repeater Firmware
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout MeshCore source
+        uses: actions/checkout@v4
+        with:
+          repository: meshcore-dev/MeshCore
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Patch CPU voltage + clock (power saving mode)
+        run: |
+          # Add hardware/vreg.h include and set voltage + clock at the top of WaveshareBoard.cpp
+          # This reduces CPU core voltage to 0.85V (from 1.10V) and clock to 48MHz (from 133MHz)
+          sed -i 's/#include "WaveshareBoard.h"/#include "WaveshareBoard.h"\n#include "hardware\/vreg.h"/' \
+            variants/waveshare_rp2040_lora/WaveshareBoard.cpp
+
+          sed -i 's/startup_reason = BD_STARTUP_NORMAL;/vreg_set_voltage(VREG_VOLTAGE_0_85);\n  set_sys_clock_khz(48000, true);\n  startup_reason = BD_STARTUP_NORMAL;/' \
+            variants/waveshare_rp2040_lora/WaveshareBoard.cpp
+
+          echo "=== Modified WaveshareBoard.cpp (first 30 lines) ==="
+          head -30 variants/waveshare_rp2040_lora/WaveshareBoard.cpp
+
+      - name: Build waveshare_rp2040_lora_repeater only
+        run: |
+          pio run -e waveshare_rp2040_lora_repeater
+
+      - name: Rename output UF2
+        run: |
+          cp ".pio/build/waveshare_rp2040_lora_repeater/firmware.uf2" \
+             "wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2"
+          echo "Built successfully:"
+          ls -lh wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2
+
+      - name: Upload UF2 as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wsrp2040lorahf-v1.14.1-48mhz-repeater
+          path: "wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2"
+          retention-days: 30

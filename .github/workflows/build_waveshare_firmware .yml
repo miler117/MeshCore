@@ -14,38 +14,34 @@ jobs:
           repository: meshcore-dev/MeshCore
           ref: main
 
-      - name: Set up Python
+      - name: Setup Build Environment
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install PlatformIO
-        run: pip install platformio
-
-      - name: Show platformio.ini BEFORE patch
-        run: |
-          echo "=== BEFORE PATCH ==="
-          cat variants/waveshare_rp2040_lora/platformio.ini
-          echo ""
-          echo "=== powersaving in source ==="
-          grep -rn "powersaving\|power_saving\|powerSaving\|POWERSAVING\|mesh_saving\|savePower" --include="*.cpp" --include="*.h" . | head -50
+        run: pip install --upgrade platformio
 
       - name: Patch 48MHz clock
         run: |
           sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
             variants/waveshare_rp2040_lora/platformio.ini
-
-      - name: Show platformio.ini AFTER patch
-        run: |
-          echo "=== AFTER PATCH ==="
+          echo "=== platformio.ini ==="
           cat variants/waveshare_rp2040_lora/platformio.ini
 
-      - name: Build
-        run: pio run -e waveshare_rp2040_lora_repeater
+      - name: Build firmware using official build script
+        env:
+          FIRMWARE_VERSION: v1.14.1
+          DISABLE_DEBUG: 1
+        run: |
+          mkdir -p out
+          bash build.sh build-firmware waveshare_rp2040_lora_repeater
+          echo "=== Output files ==="
+          ls -lh out/
 
       - name: Upload UF2
         uses: actions/upload-artifact@v4
         with:
           name: wsrp2040lorahf-v1.14.1-48mhz
-          path: .pio/build/waveshare_rp2040_lora_repeater/firmware.uf2
+          path: out/*.uf2
           retention-days: 30

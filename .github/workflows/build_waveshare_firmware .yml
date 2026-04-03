@@ -1,4 +1,4 @@
-name: Build Waveshare RP2040-LoRa-HF Repeater Firmware
+name: Build Waveshare RP2040-LoRa-HF Repeater Firmware v1
 
 on:
   workflow_dispatch:
@@ -22,12 +22,14 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      - name: Patch 48MHz clock
+      - name: Patch 48MHz clock + fix LittleFS auto-format on first boot
         run: |
           sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
             variants/waveshare_rp2040_lora/platformio.ini
-          echo "=== platformio.ini ==="
-          cat variants/waveshare_rp2040_lora/platformio.ini
+          sed -i 's/LittleFS\.begin();/LittleFS.begin(true);/g' \
+            examples/simple_repeater/main.cpp
+          echo "=== LittleFS line in main.cpp ==="
+          grep -n "LittleFS" examples/simple_repeater/main.cpp
 
       - name: Build firmware using official build script
         env:
@@ -42,6 +44,6 @@ jobs:
       - name: Upload UF2
         uses: actions/upload-artifact@v4
         with:
-          name: wsrp2040lorahf-v1.14.1-48mhz
+          name: wsrp2040lorahf-v1.14.1-48mhz-fix
           path: out/*.uf2
           retention-days: 30

@@ -26,7 +26,7 @@ jobs:
         run: |
           sed -i 's/#include "WaveshareBoard.h"/#include "WaveshareBoard.h"\n#include "hardware\/vreg.h"/' \
             variants/waveshare_rp2040_lora/WaveshareBoard.cpp
-          sed -i 's/startup_reason = BD_STARTUP_NORMAL;/vreg_set_voltage(VREG_VOLTAGE_0_90);\n  set_sys_clock_khz(48000, true);\n  startup_reason = BD_STARTUP_NORMAL;/' \
+          sed -i 's/startup_reason = BD_STARTUP_NORMAL;/vreg_set_voltage(VREG_VOLTAGE_0_95);\n  set_sys_clock_khz(48000, true);\n  startup_reason = BD_STARTUP_NORMAL;/' \
             variants/waveshare_rp2040_lora/WaveshareBoard.cpp
           sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
             variants/waveshare_rp2040_lora/platformio.ini

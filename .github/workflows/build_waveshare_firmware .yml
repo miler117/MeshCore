@@ -22,7 +22,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      - name: Patch 48MHz clock + fix LittleFS auto-format
+      - name: Apply patches
         run: |
           sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
             variants/waveshare_rp2040_lora/platformio.ini
@@ -31,10 +31,7 @@ jobs:
           grep -n "LittleFS" examples/simple_repeater/main.cpp
 
       - name: Build
-        run: |
-          export PLATFORMIO_BUILD_FLAGS="-DFIRMWARE_VERSION='\"v1.14.1\"' -DFIRMWARE_BUILD_DATE='\"$(date +%d-%b-%Y)\"'"
-          pio run -e waveshare_rp2040_lora_repeater
-          ls -lh .pio/build/waveshare_rp2040_lora_repeater/firmware.uf2
+        run: pio run -e waveshare_rp2040_lora_repeater
 
       - name: Upload UF2
         uses: actions/upload-artifact@v4

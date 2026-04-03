@@ -22,33 +22,21 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Patch CPU voltage + clock (power saving mode)
+      - name: Patch CPU voltage 0.90V + clock 48MHz
         run: |
-          # Add hardware/vreg.h include and set voltage + clock at the top of WaveshareBoard.cpp
-          # This reduces CPU core voltage to 0.85V (from 1.10V) and clock to 48MHz (from 133MHz)
           sed -i 's/#include "WaveshareBoard.h"/#include "WaveshareBoard.h"\n#include "hardware\/vreg.h"/' \
             variants/waveshare_rp2040_lora/WaveshareBoard.cpp
-
-          sed -i 's/startup_reason = BD_STARTUP_NORMAL;/vreg_set_voltage(VREG_VOLTAGE_0_85);\n  set_sys_clock_khz(48000, true);\n  startup_reason = BD_STARTUP_NORMAL;/' \
+          sed -i 's/startup_reason = BD_STARTUP_NORMAL;/vreg_set_voltage(VREG_VOLTAGE_0_90);\n  set_sys_clock_khz(48000, true);\n  startup_reason = BD_STARTUP_NORMAL;/' \
             variants/waveshare_rp2040_lora/WaveshareBoard.cpp
+          sed -i '/board_build.filesystem_size/a\  board_build.f_cpu = 48000000L' \
+            variants/waveshare_rp2040_lora/platformio.ini
 
-          echo "=== Modified WaveshareBoard.cpp (first 30 lines) ==="
-          head -30 variants/waveshare_rp2040_lora/WaveshareBoard.cpp
+      - name: Build
+        run: pio run -e waveshare_rp2040_lora_repeater
 
-      - name: Build waveshare_rp2040_lora_repeater only
-        run: |
-          pio run -e waveshare_rp2040_lora_repeater
-
-      - name: Rename output UF2
-        run: |
-          cp ".pio/build/waveshare_rp2040_lora_repeater/firmware.uf2" \
-             "wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2"
-          echo "Built successfully:"
-          ls -lh wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2
-
-      - name: Upload UF2 as artifact
+      - name: Upload UF2
         uses: actions/upload-artifact@v4
         with:
-          name: wsrp2040lorahf-v1.14.1-48mhz-repeater
-          path: "wsrp2040lorahf_v1.14.1_48mhz_0v85_repeater.uf2"
+          name: wsrp2040lorahf-v1.14.1-48mhz-0v90-repeater
+          path: .pio/build/waveshare_rp2040_lora_repeater/firmware.uf2
           retention-days: 30

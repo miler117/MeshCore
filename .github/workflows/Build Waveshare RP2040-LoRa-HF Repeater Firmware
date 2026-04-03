@@ -1,0 +1,69 @@
+name: Build Waveshare RP2040-LoRa-HF Repeater Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      cpu_freq_mhz:
+        description: 'CPU frequency in MHz (48 = power saving, 133 = max performance)'
+        required: true
+        default: '48'
+        type: choice
+        options:
+          - '48'
+          - '133'
+      firmware_version:
+        description: 'Firmware version label (e.g. v1.14.1)'
+        required: false
+        default: 'custom'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout MeshCore source
+        uses: actions/checkout@v4
+        with:
+          repository: meshcore-dev/MeshCore
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Patch CPU frequency to ${{ inputs.cpu_freq_mhz }} MHz (power saving)
+        run: |
+          # Add CPU frequency setting to waveshare variant platformio.ini
+          # The RP2040 default is 133 MHz; 48 MHz significantly reduces power consumption
+          sed -i '/^\[waveshare_rp2040_lora\]/,/^\[/ {
+            /board_build.filesystem_size/a\  board_build.f_cpu = ${{ inputs.cpu_freq_mhz }}000000L
+          }' variants/waveshare_rp2040_lora/platformio.ini
+          echo "--- Modified platformio.ini ---"
+          cat variants/waveshare_rp2040_lora/platformio.ini
+
+      - name: Build waveshare_rp2040_lora_repeater
+        env:
+          FIRMWARE_VERSION: ${{ inputs.firmware_version }}
+        run: |
+          pio run -e waveshare_rp2040_lora_repeater
+
+      - name: Rename output UF2
+        run: |
+          OUTFILE=".pio/build/waveshare_rp2040_lora_repeater/firmware.uf2"
+          FREQ=${{ inputs.cpu_freq_mhz }}
+          VER=${{ inputs.firmware_version }}
+          NEWNAME="wsrp2040lorahf_${VER}_${FREQ}mhz_repeater.uf2"
+          cp "$OUTFILE" "$NEWNAME"
+          echo "Built: $NEWNAME"
+          ls -lh "$NEWNAME"
+
+      - name: Upload UF2 as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: waveshare-rp2040-lora-repeater-firmware
+          path: "wsrp2040lorahf_*.uf2"
+          retention-days: 30

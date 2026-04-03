@@ -37,6 +37,6 @@ jobs:
       - name: Upload UF2
         uses: actions/upload-artifact@v4
         with:
-          name: wsrp2040lorahf-v1.14.1-48mhz-0v90-repeater
+          name: wsrp2040lorahf-v1.14.1-48mhz-0v95
           path: .pio/build/waveshare_rp2040_lora_repeater/firmware.uf2
           retention-days: 30

@@ -22,7 +22,7 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Patch CPU voltage 0.90V + clock 48MHz
+      - name: Patch CPU voltage 0.95V + clock 48MHz
         run: |
           sed -i 's/#include "WaveshareBoard.h"/#include "WaveshareBoard.h"\n#include "hardware\/vreg.h"/' \
             variants/waveshare_rp2040_lora/WaveshareBoard.cpp
